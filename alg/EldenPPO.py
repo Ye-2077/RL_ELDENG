@@ -51,7 +51,7 @@ class EledenFeatureExtractor(BaseFeaturesExtractor):
 
 class EldenCallback(BaseCallback):
     def __init__(self, 
-                 check_freq: int =10,
+                 check_freq: int =5,
                  best_check_freq: int=100, 
                  log_dir: str = None, 
                  verbose=1):

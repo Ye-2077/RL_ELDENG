@@ -10,7 +10,7 @@ from utils.utils_start import setup_game
 if __name__ == "__main__":
 
     config = {
-        'learning_rate': 3e-4,
+        'learning_rate': 2e-4,
         'n_steps': 256,
         'batch_size': 64,
         'n_epochs': 10,

@@ -64,6 +64,8 @@ class EledenGym(gym.Env):
 
 
     def step(self, action):
+        # action = action[0] if isinstance(action, np.ndarray) else action
+        
         action = self._step_action(action) # step the action
         state = self._get_observation() # get the observation
         done = self._check_done() # check if the game is done
@@ -106,7 +108,7 @@ class EledenGym(gym.Env):
         if len(self.action_history) > 10:
             self.action_history.pop(0)
 
-        # print(f"Action: {action_func.__name__}")
+        print(f"Action: {action_func.__name__}")
         return action
 
 
@@ -129,14 +131,19 @@ class EledenGym(gym.Env):
         player_blood_percent = int(player_blood / self.initial_player_health * 100)
         boss_blood_percent = int(boss_blood / self.initial_boss_health * 100)
 
-        state_values = np.array([player_blood_percent, boss_blood_percent])
-        state_values = torch.tensor(state_values, dtype=torch.float32)
+        # state_values = np.array([player_blood_percent, boss_blood_percent])
+        # state_values = torch.tensor(state_values, dtype=torch.float32)
         # state_values = state_values.unsqueeze(0) # add batch dimension
+        
+        state_values = np.array([player_blood_percent, boss_blood_percent], dtype=np.float32)
+        vision_image = vision_image.numpy()
 
         observation = {
             "state_values": state_values,
             "vision_image": vision_image
         }
+
+        # observation = observation.numpy()
 
         return observation
 
@@ -173,22 +180,35 @@ class EledenGym(gym.Env):
         # player get hit
         player_damage = self.previous_blood["player_blood"] - current_blood[0]
         if player_damage > 0:
-            reward -= 0.6
+            reward -= 1
+        else:
+            reward += 0.1
 
         # player dodge successfully
+        if len(self.action_history) >= 2 and self.action_history[-2:] in [[actions.light_attack, actions.dodge_left], [actions.light_attack, actions.dodge_right]] and player_damage == 0:
+            reward += 1
+            if boss_damage >= 0:
+                reward += 1
         if self.action_history[-1] in [actions.dodge_right, actions.dodge_left] and player_damage == 0:
             reward += 1
 
         # player defend successfully
         if self.action_history[-1] == actions.defend and player_damage <= 20:
-            reward += 0.5
+            reward += 1
+
+        if self.action_history[-1] == actions.light_attack:
+            if boss_damage == 0:
+                reward -= 0.1
+        
+        if self.action_history[-1] == actions.do_nothing:
+            reward -= 0.15
 
         # player attack after dodge
-        if len(self.action_history) >= 2 and self.action_history[-2:] == [actions.dodge_right, actions.dodge_left, actions.light_attack]:
-            if boss_damage > 0:
-                reward += 1
-            else:
-                reward -= 0.5
+        # if len(self.action_history) >= 2 and self.action_history[-2:] == [actions.dodge_right, actions.dodge_left, actions.light_attack]:
+        #     if boss_damage > 0:
+        #         reward += 1
+        #     else:
+        #         reward -= 0.5
         
         # if self.action_history[-1] == actions.special_attack:
         #     if boss_damage >= 5:
