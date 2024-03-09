@@ -177,24 +177,24 @@ class EledenGym(gym.Env):
 
         # player dodge successfully
         if self.action_history[-1] in [actions.dodge_right, actions.dodge_left] and player_damage == 0:
-            reward += 10
+            reward += 1
 
         # player defend successfully
         if self.action_history[-1] == actions.defend and player_damage <= 20:
-            reward += 5
+            reward += 0.5
 
         # player attack after dodge
         if len(self.action_history) >= 2 and self.action_history[-2:] == [actions.dodge_right, actions.dodge_left, actions.light_attack]:
             if boss_damage > 0:
-                reward += 10
+                reward += 1
             else:
-                reward -= 5
+                reward -= 0.5
         
         if self.action_history[-1] == actions.special_attack:
             if boss_damage >= 5:
-                reward += 10
+                reward += 1
             else:
-                reward -= 10
+                reward -= 0.1
         
         self.previous_blood = {"player_blood": current_blood[0], "boss_blood": current_blood[1]}
 
