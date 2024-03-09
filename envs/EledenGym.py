@@ -20,8 +20,8 @@ class EledenGym(gym.Env):
             0: actions.light_attack,
             1: actions.defend,
             2: actions.dodge_right,
-            3: actions.go_left,
-            4: actions.special_attack
+            3: actions.go_right,
+            4: actions.do_nothing
         }
 
         self.observation_space = spaces.Dict({
@@ -168,12 +168,12 @@ class EledenGym(gym.Env):
         # boss get hit
         boss_damage = self.previous_blood["boss_blood"] - current_blood[1]
         if boss_damage > 0:
-            reward += boss_damage/10
+            reward += 1
 
         # player get hit
         player_damage = self.previous_blood["player_blood"] - current_blood[0]
         if player_damage > 0:
-            reward -= player_damage/100
+            reward -= 0.6
 
         # player dodge successfully
         if self.action_history[-1] in [actions.dodge_right, actions.dodge_left] and player_damage == 0:
@@ -190,11 +190,11 @@ class EledenGym(gym.Env):
             else:
                 reward -= 0.5
         
-        if self.action_history[-1] == actions.special_attack:
-            if boss_damage >= 5:
-                reward += 1
-            else:
-                reward -= 0.1
+        # if self.action_history[-1] == actions.special_attack:
+        #     if boss_damage >= 5:
+        #         reward += 1
+        #     else:
+        #         reward -= 0.1
         
         self.previous_blood = {"player_blood": current_blood[0], "boss_blood": current_blood[1]}
 

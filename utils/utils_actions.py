@@ -5,22 +5,22 @@ from utils.input_simulation import PressKey, ReleaseKey
 
 ############# movement ##############
 
-def go_forward(time_to_go=0.2):
+def go_forward(time_to_go=0.4):
     PressKey(W)
     time.sleep(time_to_go)
     ReleaseKey(W)
 
-def go_backward(time_to_go=0.2):
+def go_backward(time_to_go=0.4):
     PressKey(S)
     time.sleep(time_to_go)
     ReleaseKey(S)
 
-def go_left(time_to_go=0.2):
+def go_left(time_to_go=0.4):
     PressKey(A)
     time.sleep(time_to_go)
     ReleaseKey(A)
 
-def go_right(time_to_go=0.2):
+def go_right(time_to_go=0.4):
     PressKey(D)
     time.sleep(time_to_go)
     ReleaseKey(D)
