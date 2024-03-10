@@ -10,11 +10,11 @@ from utils.utils_start import setup_game
 if __name__ == "__main__":
 
     config = {
-        'learning_rate': 2e-4,
-        'n_steps': 256,
-        'batch_size': 64,
+        'learning_rate': 1e-4,
+        'n_steps': 64,
+        'batch_size': 16,
         'n_epochs': 10,
-        'gamma': 0.99,
+        'gamma': 0.9,
     }
     model_callbacks = EldenCallback(log_dir = "./models")
 

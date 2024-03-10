@@ -1,4 +1,5 @@
 import cv2
+import time
 import torch
 import numpy as np
 import gymnasium as gym
@@ -18,10 +19,16 @@ class EledenGym(gym.Env):
         self.vision_size = 64
         self.action_dict = {
             0: actions.light_attack,
-            1: actions.defend,
-            2: actions.dodge_right,
-            3: actions.go_right,
-            4: actions.do_nothing
+            # 1: actions.go_backward,
+            # 1: actions.dodge_right,
+            # 3: actions.go_right,
+            # 4: actions.go_left,
+            # 5: actions.dodge_left,
+            # 2: actions.special_attack,
+            # 2: actions.dodge_right,
+            # 2: actions.go_backward,
+            1: actions.jump,
+            2: actions.special_attack
         }
 
         self.observation_space = spaces.Dict({
@@ -32,7 +39,7 @@ class EledenGym(gym.Env):
 
         self.player_blood_region = (80,60,500,71)
         self.boss_blood_region = (245,500,800,505)
-        self.state_window = (315,100,715,500)
+        self.state_window = (200,90,850,500) #(315,100,715,500)
 
         self.state = None
         self.initial_player_health = None
@@ -101,6 +108,7 @@ class EledenGym(gym.Env):
         if action in self.action_dict:
             action_func = self.action_dict[action]
             action_func()
+            # time.sleep(0.05)
         else:
             print(f"[ERROR] Action {action} not found in action_dict")
 
@@ -109,6 +117,7 @@ class EledenGym(gym.Env):
             self.action_history.pop(0)
 
         print(f"Action: {action_func.__name__}")
+
         return action
 
 
@@ -185,23 +194,40 @@ class EledenGym(gym.Env):
             reward += 0.1
 
         # player dodge successfully
-        if len(self.action_history) >= 2 and self.action_history[-2:] in [[actions.light_attack, actions.dodge_left], [actions.light_attack, actions.dodge_right]] and player_damage == 0:
-            reward += 1
-            if boss_damage >= 0:
-                reward += 1
+        # if len(self.action_history) >= 2 and self.action_history[-2:] in [[actions.light_attack, actions.dodge_left], [actions.light_attack, actions.dodge_right]] and player_damage == 0:
+        #     reward += 1
+        #     if boss_damage >= 0:
+        #         reward += 1
+
         if self.action_history[-1] in [actions.dodge_right, actions.dodge_left] and player_damage == 0:
             reward += 1
 
-        # player defend successfully
-        if self.action_history[-1] == actions.defend and player_damage <= 20:
-            reward += 1
+        # # 检查最后两个动作是否是特殊攻击组合
+        # if len(self.action_history) >= 2:
+        #     last_two_actions = [self.action_history[-2], self.action_history[-1]]
+        #     special_combinations = [(actions.special_attack, actions.light_attack)]
+        #     if tuple(last_two_actions) in special_combinations:
+        #         # 特殊攻击执行了
+        #         if player_damage == 0:  # 玩家在执行特殊攻击后没有受到伤害
+        #             reward += 1  # 给予奖励
+        #         if boss_damage > 0:
+        #             reward += 1  # 如果boss受到了伤害，给予额外奖励
+        #         else:
+        #             reward -= 0.5  # 如果没有对boss造成伤害，则给予惩罚
+
+        # # player defend successfully
+        # if self.action_history[-1] == actions.defend and player_damage <= 20:
+        #     reward += 1
 
         if self.action_history[-1] == actions.light_attack:
             if boss_damage == 0:
                 reward -= 0.1
+
+        if len(self.action_history) >= 3 and self.action_history[-3:] == [actions.dodge_right, actions.dodge_right, actions.dodge_right]:
+            reward -= 0.2
         
-        if self.action_history[-1] == actions.do_nothing:
-            reward -= 0.15
+        # if self.action_history[-1] == actions.do_nothing:
+        #     reward -= 0.1
 
         # player attack after dodge
         # if len(self.action_history) >= 2 and self.action_history[-2:] == [actions.dodge_right, actions.dodge_left, actions.light_attack]:

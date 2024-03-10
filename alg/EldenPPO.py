@@ -10,6 +10,24 @@ from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.callbacks import BaseCallback
 
+class ResBlock(nn.Module):
+    """
+    A simple residual block with two convolutional layers and a skip connection.
+    """
+    def __init__(self, in_channels):
+        super(ResBlock, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
+
+    def forward(self, x):
+        residual = x
+        out = self.conv1(x)
+        out = self.relu(out)
+        out = self.conv2(out)
+        out += residual  # Skip connection
+        return self.relu(out)
+
 class EledenFeatureExtractor(BaseFeaturesExtractor):
     def __init__(self, 
                  observation_space: spaces.Dict, 
@@ -19,19 +37,49 @@ class EledenFeatureExtractor(BaseFeaturesExtractor):
         super(EledenFeatureExtractor, self).__init__(observation_space, features_dim=features_dim)
         
         # cnn for 64x64 image input
+        # self.cnn = nn.Sequential(
+        #     nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),  # output: [32, 64, 64]
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=2),  # output: [32, 32, 32]
+        #     nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),  # output: [64, 32, 32]
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=2),  # output: [64, 16, 16]
+        #     nn.Flatten(),  # flatten
+        # )
+         # Adjust the calculation of cnn_output_size according to the added layers and max pooling
+        # cnn_output_size = 128 * (16//4) * (16//4)  # Assuming additional max pooling reduces size
+
         self.cnn = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),  # output: [32, 64, 64]
+            nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),  # output: [32, 32, 32]
-            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),  # output: [64, 32, 32]
+            nn.MaxPool2d(kernel_size=2),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),  # output: [64, 16, 16]
-            nn.Flatten(),  # flatten
+            nn.MaxPool2d(kernel_size=2),
+            ResBlock(64),  # Adding a residual block
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),  # Increasing depth
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2),  # Further reducing dimensions
+            nn.Flatten(),
         )
+        cnn_output_size = 8192  # 128 * 16 * 16
+
+        # self.cnn = nn.Sequential(
+        #     nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),  # output: [32, 128, 128]
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=2),  # output: [32, 64, 64]
+        #     nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),  # output: [64, 64, 64]
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=2),  # output: [64, 32, 32]
+        #     nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),  # 新增的卷积层, output: [128, 32, 32]
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=2),  # 新增的池化层, output: [128, 16, 16]
+        #     nn.Flatten(),  # flatten
+        # )
         
         # caculate the output size after the CNN
         # two maxpooling layers for 64 channel 16x16 image, the output size is 64*16*16
-        cnn_output_size = 64 * 16 * 16
+        # cnn_output_size = 128 * 16 * 16
         
         # fully connected layer, combined the CNN output and state_values
         # extra 2 for the state_values

@@ -68,6 +68,11 @@ def run_right(time_to_go=0.5):
 def do_nothing(time_to_go=0.1):
     pass
 
+def recover(time_to_go=0.1):
+    PressKey(R)
+    time.sleep(time_to_go)
+    ReleaseKey(R)
+
 ############# dodge ##############
 
 def dodge_backjump(time_to_go=0.1):
@@ -156,7 +161,7 @@ def defend_on(time_to_go=0.4):
 def defend_off(time_to_go=0.4):
     ReleaseKey(L)
 
-def defend(time_to_go=0.3):
+def defend(time_to_go=0.5):
     PressKey(L)
     time.sleep(time_to_go)
     ReleaseKey(L)
