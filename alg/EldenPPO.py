@@ -116,14 +116,13 @@ class EldenCallback(BaseCallback):
     def _on_step(self) -> bool:
         info = self.locals['infos'][0]
 
-        if self.n_calls % 10 == 0:
+        print(f"---------- Episode {self.episode_counter} / Step {self.num_timesteps} ----------")
 
-            print(f"---------- Episode {self.episode_counter} / Step {self.num_timesteps} ----------")
-
-            print(f"- Episode Total Reward: {info['total_reward']}")
-            print(f"- Action Taken: {info['action_taken']}")
-            print(f"- Boss Health: {info['boss_health']}")
-            print(f"- Player Health: {info['player_health']}")
+        print(f"- Episode Total Reward: {info['total_reward']}")
+        print(f"- Action Taken: {info['action_taken']}")
+        print(f"- Boss Health: {info['boss_health']}")
+        print(f"- Player Health: {info['player_health']}")
+        print(f"- Health Keep Count: {info['health_keep_count']}")
         
         # if self.n_calls % self.best_check_freq == 0:
         #     x, y = self.model.episode_reward_history[-1]
@@ -132,14 +131,17 @@ class EldenCallback(BaseCallback):
         #         self.model.save(self.log_dir + 'best_model')
         #         print(f"Best mean reward updated: {self.best_mean_reward}")
 
-        if 'done' in self.locals and self.locals['done']:
-            self.episode_counter += 1
+        # if 'done' in self.locals and self.locals['done']:
+        #     self.episode_counter += 1
 
-            if self.episode_counter % self.check_freq == 0:
-                model_path = f"{self.log_dir}/model_{self.episode_counter}.zip"
-                self.model.save(model_path)
-                print(f"Model saved: {model_path}")
-            
+        #     if self.episode_counter % self.check_freq == 0:
+        #         model_path = f"{self.log_dir}/model_{self.episode_counter}.zip"
+        #         self.model.save(model_path)
+        #         print(f"Model saved: {model_path}")
+        
+        if self.n_calls % 500 == 0:
+            model_path = f"{self.log_dir}/model_{self.n_calls}.zip"
+            self.model.save(model_path)
 
         
         return True

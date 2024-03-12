@@ -4,6 +4,7 @@ from alg.EldenPPO import EledenFeatureExtractor
 import envs.EledenGym # import EledenGym, must be imported
 from utils.utils_start import setup_game
 
+obs_list = []
 
 def test_model(env_id, model_path, num_episodes=10):
 
@@ -16,10 +17,11 @@ def test_model(env_id, model_path, num_episodes=10):
         total_reward = 0
 
         while not done:
-            action, _states = model.predict(obs, deterministic=True)
+            action, _states = model.predict(obs, deterministic=False)
             action = action.item()
             obs, reward, done, _, info = env.step(action)
             total_reward += reward
+            obs_list.append(obs)
             # env.render()
 
         print(f"Episode {episode + 1}/{num_episodes}, Total Reward: {total_reward}")
@@ -29,5 +31,5 @@ def test_model(env_id, model_path, num_episodes=10):
 if __name__ == "__main__":
     
     env_id = 'EledenGym-v0'
-    model_path = 'ppo_custom_feature_extractor.zip'
+    model_path = ''
     test_model(env_id, model_path, num_episodes=10)
