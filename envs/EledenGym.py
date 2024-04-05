@@ -55,6 +55,10 @@ class EledenGym(gym.Env):
         self.action_history = []
         self.boss_damage_history = []  # store the boss damage history for the last 15 actions
         self.player_damage_history = []  # store the player damage history for the last 15 actions
+        self.player_damage = 0
+        self.boss_damage = 0
+
+        self.a1=0
 
     def reset(self, seed=None, options=None):
         if self.state is not None:
@@ -72,20 +76,24 @@ class EledenGym(gym.Env):
         self.action_history = []
         self.boss_damage_history = []
         self.player_damage_history = [] 
+        self.player_damage = 0
+        self.boss_damage = 0
 
         self.flag_boss_blood_lower_than_20 = False
         self.health_keep_count = 0
 
         self.state = self._get_observation()
         info = {}
+
+        self.a1=0
         
         return self.state, info
 
 
     def step(self, action):
-        
         action = self._step_action(action) # step the action
         state = self._get_observation() # get the observation
+
         done = self._check_done() # check if the game is done
         reward = self._get_reward(action) # get the reward
 
@@ -94,14 +102,16 @@ class EledenGym(gym.Env):
 
         info = {
             "action_taken": self.action_dict[action].__name__,
-            "boss_health": self.state["state_values"][1],
             "player_health": self.state["state_values"][0],
+            "boss_health": self.state["state_values"][1],
+            "player_damage": self.player_damage,
+            "boss_damage": self.boss_damage,
             "health_keep_count": self.health_keep_count,
             "total_reward": self.total_reward,
-            "- rew_damage": self.rew_damage,
-            "- rew_action_cost": self.rew_action_cost,
-            "- rew_health_keep": self.rew_health_keep,
-            "- rew_boss_low_health": self.rew_boss_low_health
+            "rew_damage": self.rew_damage,
+            "rew_action_cost": self.rew_action_cost,
+            "rew_health_keep": self.rew_health_keep,
+            "rew_boss_low_health": self.rew_boss_low_health
         }
 
         return state, reward, done, False, info
@@ -120,7 +130,7 @@ class EledenGym(gym.Env):
         if action in self.action_dict:
             action_func = self.action_dict[action]
             action_func()
-            # time.sleep(0.05)
+            time.sleep(0.1)
         else:
             print(f"[ERROR] Action {action} not found in action_dict")
 
@@ -128,7 +138,7 @@ class EledenGym(gym.Env):
         if len(self.action_history) > 10:
             self.action_history.pop(0)
 
-        print(f"Action: {action_func.__name__}")
+        # print(f"Action: {action_func.__name__}")
 
         return action
 
@@ -186,19 +196,62 @@ class EledenGym(gym.Env):
         current_blood = self.state["state_values"]
         player_damage = self.previous_blood["player_blood"] - current_blood[0]
         boss_damage = self.previous_blood["boss_blood"] - current_blood[1]
+
+        self.player_damage = player_damage
+        self.boss_damage = boss_damage
         
-        self.health_keep_count = 0.5 + self.health_keep_count if player_damage == 0 else 0
+        self.health_keep_count = 1 + self.health_keep_count if player_damage == 0 else 0
         self.player_damage_history = (self.player_damage_history + [player_damage])[-15:]
         self.boss_damage_history = (self.boss_damage_history + [boss_damage])[-15:]
         total_boss_damage = sum(self.boss_damage_history)
         total_player_damage = sum(self.player_damage_history)
+        
+        self.a1=self.a1+1
+        # print(f"=============================================================================================")
+        # print(f"[{self.a1}] Action: {action.__name__}")
+        # print(f"[{self.a1}] Player Previous Blood: {self.previous_blood['player_blood']} | Boss Previous Blood: {self.previous_blood['boss_blood']}")
+        # print(f"[{self.a1}] Player Blood: {current_blood[0]} | Boss Blood: {current_blood[1]}")
+        # print(f"[{self.a1}] Player Damage: {player_damage} | Boss Damage: {boss_damage}")
+        # print(f"[{self.a1}] Total Boss Damage: {total_boss_damage} | Total Player Damage: {total_player_damage}")
+        # print(f"------------------------------------------------------------------------------------")
+        header = f"[{self.a1}]"
+        action_str = f"Action: {action.__name__}"
+        prev_player_blood_str = f"Player Previous Blood: {self.previous_blood['player_blood']}"
+        prev_boss_blood_str = f"Boss Previous Blood: {self.previous_blood['boss_blood']}"
+        player_blood_str = f"Player Blood: {current_blood[0]}"
+        boss_blood_str = f"Boss Blood: {current_blood[1]}"
+        player_damage_str = f"Player Get Damage: {player_damage}"
+        boss_damage_str = f"Boss Get Damage: {boss_damage}"
+        total_boss_damage_str = f"Total Boss Get Damage: {total_boss_damage}"
+        total_player_damage_str = f"Total Player Get Damage: {total_player_damage}"
 
+        max_width = max(len(action_str), len(prev_player_blood_str), len(prev_boss_blood_str), 
+                        len(player_blood_str), len(boss_blood_str), len(player_damage_str), 
+                        len(boss_damage_str), len(total_boss_damage_str), len(total_player_damage_str))
+
+        print("=============================================================================================")
+        print(f"{header} {action_str:<{max_width}}")
+        print(f"{header} {prev_player_blood_str:<{max_width}} | {prev_boss_blood_str:<{max_width}}")
+        print(f"{header} {player_blood_str:<{max_width}} | {boss_blood_str:<{max_width}}")
+        print(f"{header} {player_damage_str:<{max_width}} | {boss_damage_str:<{max_width}}")
+        print(f"{header} {total_boss_damage_str:<{max_width}} | {total_player_damage_str:<{max_width}}")
+        print("------------------------------------------------------------------------------------")
+
+        
         self.rew_damage = self._rew_damage(player_damage, boss_damage, total_player_damage, total_boss_damage) # rew_damage
         self.rew_action_cost = self._rew_action_cost(action) # rew_action_cost
         self.rew_health_keep = self._rew_health_keep() # rew_health_keep
         self.rew_boss_low_health = self._rew_boss_low_health(current_blood) # rew_boss_low_health
 
-        reward = self.rew_damage + self.rew_action_cost + self.rew_health_keep + self.rew_boss_low_health       
+        reward = self.rew_damage + self.rew_action_cost + self.rew_health_keep + self.rew_boss_low_health    
+
+        
+        print(f"[{self.a1}] Total Reward: {reward}")
+        print(f"[{self.a1}] - reward_damage: {self.rew_damage}")
+        print(f"[{self.a1}] - reward_action_cost: {self.rew_action_cost}")
+        print(f"[{self.a1}] - reward_health_keep: {self.rew_health_keep}")
+        print(f"[{self.a1}] - reward_boss_low_health: {self.rew_boss_low_health}")
+        print(f"[{self.a1}] - Health Keep Count: {self.health_keep_count}")  
         
         self.previous_blood = {"player_blood": current_blood[0], "boss_blood": current_blood[1]}
         return reward
@@ -206,25 +259,27 @@ class EledenGym(gym.Env):
 
     def _rew_damage(self,player_damage, boss_damage, total_player_damage, total_boss_damage):
         rew_damage = 0
-        rew_damage += boss_damage * 0.5
-        rew_damage -= player_damage * 0.5
+        rew_damage += boss_damage * 5
+        rew_damage -= player_damage * 0.05
 
-        if total_boss_damage > 20 and total_player_damage < 10:
+        if total_boss_damage > 20 and total_player_damage <= 20:
             rew_damage += 10
+        elif total_boss_damage > 5 and total_player_damage <= 20:
+            rew_damage += 5
         return rew_damage
     
 
     def _rew_action_cost(self,action):
         action_cost_mapping = {
-            actions.light_attack: -1,
-            actions.special_attack: -0.5,
-            actions.defend: -0.5,
-            actions.dodge_left: -0.1,
-            actions.dodge_right: -0.1,
-            actions.go_backward: -0.1,
-            actions.go_forward: -0.1,
-            actions.go_left: -0.1,
-            actions.go_right: -0.1,
+            actions.light_attack: -0.035,
+            actions.special_attack: -0.025,
+            actions.defend: -0.03,
+            actions.dodge_left: -0.025,
+            actions.dodge_right: -0.025,
+            actions.go_backward: -0.015,
+            actions.go_forward: -0.0125,
+            actions.go_left: -0.01,
+            actions.go_right: -0.01,
         }
         rew_action_cost = action_cost_mapping.get(action, 0)
         if rew_action_cost == 0 and action not in action_cost_mapping:
@@ -236,7 +291,7 @@ class EledenGym(gym.Env):
     def _rew_health_keep(self):
         rew_health_keep = 0
         if self.health_keep_count % 15 == 0 and self.health_keep_count != 0:
-            rew_health_keep += 5
+            rew_health_keep += 7.5
         return rew_health_keep
 
 

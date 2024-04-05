@@ -22,6 +22,7 @@ if __name__ == "__main__":
         'batch_size': 16,
         'n_epochs': 10,
         'gamma': 0.95,
+        'random_seed': 22,
     }
     now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     log_dir_path = os.path.join("./models/", now)
@@ -51,7 +52,8 @@ if __name__ == "__main__":
                     n_steps = config['n_steps'],
                     batch_size = config['batch_size'],
                     n_epochs = config['n_epochs'],
-                    gamma = config['gamma']
+                    gamma = config['gamma'],
+                    seed=config['random_seed']
                     )
 
     setup_game()

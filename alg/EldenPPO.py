@@ -116,13 +116,20 @@ class EldenCallback(BaseCallback):
     def _on_step(self) -> bool:
         info = self.locals['infos'][0]
 
-        print(f"---------- Episode {self.episode_counter} / Step {self.num_timesteps} ----------")
+        # print(f"---------- Episode {self.episode_counter} / Step {self.num_timesteps} ----------")
 
-        print(f"- Episode Total Reward: {info['total_reward']}")
-        print(f"- Action Taken: {info['action_taken']}")
-        print(f"- Boss Health: {info['boss_health']}")
-        print(f"- Player Health: {info['player_health']}")
-        print(f"- Health Keep Count: {info['health_keep_count']}")
+        # print(f"Action Taken: {info['action_taken']}")
+        # print(f"Boss Health: {info['boss_health']} | Player Health: {info['player_health']}")
+        # print(f"Boss Damage: {info['boss_damage']} | Player Damage: {info['player_damage']}")
+        # print(f"Health Keep Count: {info['health_keep_count']}")
+
+        # print(f"Episode Total Reward: {info['total_reward']}")        
+        # # print(f"- reward_damage: {info['rew_damage']}")
+        # # print(f"- reward_action_cost: {info['rew_action_cost']}")
+        # # print(f"- reward_health_keep: {info['rew_health_keep']}")
+        # # print(f"- reward_boss_low_health: {info['rew_boss_low_health']}")
+        
+        # print(f"---------------------------------")
         
         # if self.n_calls % self.best_check_freq == 0:
         #     x, y = self.model.episode_reward_history[-1]

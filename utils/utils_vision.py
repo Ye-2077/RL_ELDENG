@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import torch
 import win32gui, win32ui, win32con, win32api
 
 
@@ -118,21 +119,41 @@ def grab_screen2hsv(region:tuple = None):
 #################################################
 def grab_blood(hsv):
 
-    lower_red1 = np.array([0, 125, 70])
-    upper_red1 = np.array([15, 255, 255])
+    # lower_red1 = np.array([0, 125, 70])
+    # upper_red1 = np.array([15, 255, 255])
 
-    lower_red2 = np.array([170, 120, 70])
-    upper_red2 = np.array([179, 255, 255])
+    # lower_red2 = np.array([170, 120, 70])
+    # upper_red2 = np.array([179, 255, 255])
 
-    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
-    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
-    mask = cv2.bitwise_or(mask1, mask2)
+    # mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+    # mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+    # mask = cv2.bitwise_or(mask1, mask2)
 
-    # fliter out the noise
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-    eroded = cv2.erode(mask, kernel, iterations=1)
-    dilated = cv2.dilate(eroded, kernel, iterations=1)
+    # # fliter out the noise
+    # # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    # # eroded = cv2.erode(mask, kernel, iterations=1)
+    # # dilated = cv2.dilate(eroded, kernel, iterations=1)
 
-    blood_amount = cv2.countNonZero(dilated)
+    # # blood_amount = cv2.countNonZero(dilated)
+    # blood_amount = cv2.countNonZero(mask)
 
-    return blood_amount, dilated
+        # 将numpy数组转换为torch Tensor并移到GPU上
+    hsv_tensor = torch.from_numpy(hsv).to("cuda").float()
+    
+    # 定义红色的两个范围
+    lower_red1 = torch.tensor([0, 125, 70], device="cuda").float()
+    upper_red1 = torch.tensor([10, 255, 255], device="cuda").float()
+    
+    lower_red2 = torch.tensor([170, 120, 70], device="cuda").float()
+    upper_red2 = torch.tensor([180, 255, 255], device="cuda").float()
+    
+    # 对两个范围应用掩码
+    mask1 = ((hsv_tensor >= lower_red1) & (hsv_tensor <= upper_red1)).all(2)
+    mask2 = ((hsv_tensor >= lower_red2) & (hsv_tensor <= upper_red2)).all(2)
+    
+    mask = mask1 | mask2
+    
+    # 计算血量条的非零像素数量
+    blood_amount = mask.sum().item()
+
+    return blood_amount, mask
